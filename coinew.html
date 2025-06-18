@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doolcoin</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        :root {
+            --bg-color: #121212;
+            --text-color: white;
+            --currency-bg: rgba(0, 0, 0, 0.7);
+            --currency-border: rgba(255, 255, 255, 0.1);
+            --circle-border: rgba(255, 255, 255, 0.1);
+            --shop-bg: rgba(0, 0, 0, 0.8);
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        body.light-theme {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --currency-bg: rgba(255, 255, 255, 0.9);
+            --currency-border: rgba(0, 0, 0, 0.1);
+            --circle-border: rgba(0, 0, 0, 0.1);
+            --shop-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        .refresh-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: var(--currency-bg);
+            color: var(--text-color);
+            border: 1px solid var(--currency-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+
+        .refresh-button:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .theme-label {
+            font-size: 20px;
+        }
+
+        .theme-toggle {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background-color: #555;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle.active {
+            background-color: #2196F3;
+        }
+
+        .theme-toggle-handle {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .theme-toggle.active .theme-toggle-handle {
+            transform: translateX(30px);
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            z-index: 10;
+        }
+
+        .currency-box {
+            font-size: 24px;
+            background-color: var(--currency-bg);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-color);
+            border: 1px solid var(--currency-border);
+            backdrop-filter: blur(5px);
+        }
+
+        .circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            transition: transform 0.1s, box-shadow 0.3s, filter 0.3s;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            z-index: 5;
+            border: 2px solid var(--circle-border);
+        }
+
+        /* СТАНДАРТНЫЙ СКИН */
+        .circle.default-skin::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                rgba(255, 105, 180, 0.8),
+                rgba(255, 165, 0, 0.8),
+                rgba(148, 0, 211, 0.8),
+                rgba(0, 0, 255, 0.8)
+            );
+            background-size: 400% 400%;
+            animation: gradient 8s ease infinite;
+            z-index: -1;
+        }
+
+        /* ПРЕМИУМ СКИН */
+        .circle.premium-skin::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.9) 0%, rgba(0, 100, 200, 0.9) 100%);
+            z-index: -1;
+        }
+
+        .circle.premium-skin::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 0L61 35H100L69 57L80 92L50 70L20 92L31 57L0 35H39L50 0Z' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E");
+            background-size: 30px 30px;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        /* ЛЕГЕНДАРНЫЙ СКИН */
+        .circle.legendary-skin::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                rgba(255, 215, 0, 0.8),
+                rgba(255, 100, 0, 0.8),
+                rgba(255, 0, 100, 0.8),
+                rgba(255, 0, 200, 0.8),
+                rgba(255, 215, 0, 0.8)
+            );
+            z-index: -1;
+            animation: rotate-hue 5s linear infinite;
+        }
+
+        .circle.legendary-skin::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 60%, rgba(255, 215, 0, 0.3) 100%);
+            z-index: -1;
+        }
+
+        @keyframes rotate-hue {
+            from { filter: hue-rotate(0deg); }
+            to { filter: hue-rotate(360deg); }
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* ОБЩИЕ ЭФФЕКТЫ */
+        .tap-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+            animation: tap-animation 0.8s forwards;
+            transform: scale(0);
+            opacity: 1;
+        }
+
+        /* УНИКАЛЬНЫЕ ЭФФЕКТЫ ДЛЯ СКИНОВ */
+        .premium-tap-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(0, 200, 255, 0) 70%);
+            pointer-events: none;
+            animation: premium-tap-animation 1s forwards;
+            transform: scale(0);
+            opacity: 1;
+        }
+
+        .premium-star-effect {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M25 0L30 17H50L35 28L40 50L25 35L10 50L15 28L0 17H20L25 0Z' fill='rgba(255,255,255,0.8)'/%3E%3C/svg%3E");
+            background-size: contain;
+            pointer-events: none;
+            animation: star-animation 1s forwards;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        .legendary-tap-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 100, 0, 0) 70%);
+            pointer-events: none;
+            animation: legendary-tap-animation 1s forwards;
+            transform: scale(0);
+            opacity: 1;
+        }
+
+        .legendary-spark-effect {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: gold;
+            pointer-events: none;
+            animation: spark-animation 1s forwards;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        @keyframes tap-animation {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        @keyframes premium-tap-animation {
+            0% { transform: scale(0); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        @keyframes star-animation {
+            0% { transform: scale(0.5) rotate(0deg); opacity: 0; }
+            20% { transform: scale(1.2) rotate(-20deg); opacity: 1; }
+            40% { transform: scale(1) rotate(20deg); opacity: 1; }
+            100% { transform: scale(1.5) rotate(0deg); opacity: 0; }
+        }
+
+        @keyframes legendary-tap-animation {
+            0% { transform: scale(0); opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        @keyframes spark-animation {
+            0% { transform: translate(0, 0) scale(0); opacity: 0; }
+            20% { opacity: 1; }
+            100% { 
+                transform: translate(
+                    calc((var(--spark-x) - 0.5) * 100px), 
+                    calc((var(--spark-y) - 0.5) * 100px)
+                ) scale(1); 
+                opacity: 0; 
+            }
+        }
+
+        .crystal-effect {
+            position: fixed;
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 30px rgba(0, 200, 255, 0.6);
+            pointer-events: none;
+            animation: crystal-animation 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+            z-index: 20;
+            filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.8));
+            transform-origin: center;
+        }
+
+        @keyframes crystal-animation {
+            0% {
+                transform: translate(0, 0) scale(0.5) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+                transform: translate(0, -10px) scale(0.7) rotate(10deg);
+            }
+            30% {
+                transform: translate(0, -30px) scale(1) rotate(-10deg);
+            }
+            50% {
+                transform: translate(0, -60px) scale(1.2) rotate(10deg);
+            }
+            80% {
+                transform: translate(0, -100px) scale(1.4) rotate(0deg);
+            }
+            100% {
+                transform: translate(0, -150px) scale(1.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .pulse {
+            animation: pulse-effect 1s infinite;
+        }
+
+        @keyframes pulse-effect {
+            0% {
+                box-shadow: 0 0 10px 0 rgba(0, 200, 255, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px 10px rgba(0, 200, 255, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 10px 0 rgba(0, 200, 255, 0.5);
+            }
+        }
+
+        .coin-effect {
+            position: fixed; /* ИЗМЕНЕНО: absolute -> fixed */
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            animation: coin-animation 1s forwards;
+            z-index: 15;
+            transform: translateX(-50%); /* Для центрирования */
+        }
+
+        @keyframes coin-animation {
+            0% {
+                transform: translateY(0) scale(1) translateX(-50%);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-80px) scale(1.5) translateX(-50%);
+                opacity: 0;
+            }
+        }
+
+        .crystal-icon {
+            font-size: 26px;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            animation: crystal-icon-pulse 2s infinite;
+        }
+
+        @keyframes crystal-icon-pulse {
+            0% {
+                transform: scale(1);
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            }
+            50% {
+                transform: scale(1.2);
+                text-shadow: 0 0 20px rgba(0, 255, 255, 1);
+            }
+            100% {
+                transform: scale(1);
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            }
+        }
+
+        .ban-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-size: 24px;
+            text-align: center;
+            display: none;
+        }
+
+        .ban-timer {
+            font-size: 48px;
+            margin: 20px 0;
+            color: red;
+        }
+
+        .warning {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 50;
+            display: none;
+        }
+
+        .shop-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: var(--currency-bg);
+            color: var(--text-color);
+            border: 1px solid var(--currency-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        .shop-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .shop {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--shop-bg);
+            border-radius: 15px;
+            padding: 20px;
+            width: 320px;
+            max-width: 90%;
+            z-index: 100;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--currency-border);
+        }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--currency-border);
+            padding-bottom: 10px;
+        }
+
+        .shop-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .close-shop {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .shop-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--currency-border);
+        }
+
+        .shop-tab {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .shop-tab.active {
+            border-bottom: 2px solid #00ffff;
+        }
+
+        .shop-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shop-item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            flex-grow: 1;
+        }
+
+        .item-name {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .item-desc {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 16px;
+            white-space: nowrap;
+            margin-left: 15px;
+        }
+
+        .buy-btn {
+            background-color: rgba(0, 200, 255, 0.3);
+            border: 1px solid rgba(0, 200, 255, 0.5);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+
+        .buy-btn:hover {
+            background-color: rgba(0, 200, 255, 0.5);
+        }
+
+        .buy-btn:disabled {
+            background-color: rgba(100, 100, 100, 0.3);
+            border-color: rgba(100, 100, 100, 0.5);
+            cursor: not-allowed;
+        }
+
+        .active-boost {
+            display: inline-block;
+            background-color: rgba(0, 200, 100, 0.3);
+            border: 1px solid rgba(0, 200, 100, 0.5);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .exchange-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--currency-bg);
+            color: var(--text-color);
+            border: 1px solid var(--currency-border);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        .exchange-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .exchange-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--shop-bg);
+            border-radius: 15px;
+            padding: 20px;
+            width: 300px;
+            max-width: 90%;
+            z-index: 100;
+            box-shadow: 0 5px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--currency-border);
+        }
+
+        .exchange-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--currency-border);
+            padding-bottom: 10px;
+        }
+
+        .exchange-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .close-exchange {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .exchange-rate {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .exchange-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--currency-border);
+            border-radius: 5px;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .exchange-action {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .exchange-submit {
+            flex-grow: 1;
+            background-color: rgba(0, 200, 100, 0.3);
+            border: 1px solid rgba(0, 200, 100, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .exchange-submit:hover {
+            background-color: rgba(0, 200, 100, 0.5);
+        }
+
+        .exchange-submit:disabled {
+            background-color: rgba(100, 100, 100, 0.3);
+            border-color: rgba(100, 100, 100, 0.5);
+            cursor: not-allowed;
+        }
+
+        .exchange-cancel {
+            background-color: rgba(200, 0, 0, 0.3);
+            border: 1px solid rgba(200, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .exchange-cancel:hover {
+            background-color: rgba(200, 0, 0, 0.5);
+        }
+
+        .owned-label {
+            color: #00ff00;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .boosts-container {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .boost-indicator {
+            background-color: var(--currency-bg);
+            border: 1px solid var(--currency-border);
+            border-radius: 15px;
+            padding: 5px 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .boost-icon {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <button class="refresh-button" onclick="location.reload()">↻</button>
+
+    <div class="theme-switcher">
+        <div class="theme-label">🌙</div>
+        <div class="theme-toggle" id="themeToggle">
+            <div class="theme-toggle-handle"></div>
+        </div>
+        <div class="theme-label">☀️</div>
+    </div>
+
+    <div class="boosts-container" id="boostsContainer"></div>
+
+    <div class="shop-btn" id="shopBtn">🛒</div>
+    <div class="exchange-btn" id="exchangeBtn">⇄</div>
+
+    <div class="warning" id="warning">Слишком быстро! Прекратите кликать так часто!</div>
+    <div class="ban-screen" id="banScreen">
+        <div>ВЫ ЗАБАНЕНЫ ЗА АВТОКЛИКЕР!</div>
+        <div class="ban-timer" id="banTimer">60</div>
+        <div>Вам отняли половину монет!</div>
+        <div>Осталось секунд:</div>
+    </div>
+
+    <div class="stats-container">
+        <div class="currency-box">
+            <span id="crystals">0</span>
+            <span class="crystal-icon">✦</span>
+        </div>
+        <div class="currency-box">
+            <span id="coins">0</span>
+            <span>Đ</span>
+        </div>
+    </div>
+    <div class="circle default-skin" id="circle"></div>
+
+    <div class="shop" id="shop">
+        <div class="shop-header">
+            <div class="shop-title">Магазин</div>
+            <div class="close-shop" id="closeShop">✕</div>
+        </div>
+        <div class="shop-tabs">
+            <div class="shop-tab active" data-tab="skins">Скины</div>
+            <div class="shop-tab" data-tab="boosts">Бусты</div>
+        </div>
+        <div class="shop-content">
+            <div class="shop-tab-content" id="skinsTab">
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Стандартный</div>
+                        <div class="item-desc">Классический разноцветный круг</div>
+                    </div>
+                    <button class="buy-btn" id="defaultSkinBtn" disabled>Выбрано</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Премиум</div>
+                        <div class="item-desc">Голубой градиент с эффектом звёзд</div>
+                    </div>
+                    <div class="item-price">100 <span class="crystal-icon">✦</span></div>
+                    <button class="buy-btn" id="premiumSkinBtn">Купить</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Легендарный</div>
+                        <div class="item-desc">Золотисто-огненный вращающийся градиент</div>
+                    </div>
+                    <div class="item-price">500 <span class="crystal-icon">✦</span></div>
+                    <button class="buy-btn" id="legendarySkinBtn">Купить</button>
+                </div>
+            </div>
+            <div class="shop-tab-content" id="boostsTab" style="display: none;">
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Множитель x2</div>
+                        <div class="item-desc">Удваивает монеты за клик на 1 минуту</div>
+                    </div>
+                    <div class="item-price">500 <span>Đ</span></div>
+                    <button class="buy-btn" id="multiplierBoostBtn">Купить</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Удача +30%</div>
+                        <div class="item-desc">Увеличивает шанс кристалла на 30 секунд</div>
+                    </div>
+                    <div class="item-price">300 <span>Đ</span></div>
+                    <button class="buy-btn" id="luckBoostBtn">Купить</button>
+                </div>
+                <div class="shop-item">
+                    <div class="item-info">
+                        <div class="item-name">Автокликер</div>
+                        <div class="item-desc">1 клик в секунду на 30 секунд</div>
+                    </div>
+                    <div class="item-price">400 <span>Đ</span></div>
+                    <button class="buy-btn" id="autoclickerBoostBtn">Купить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="exchange-modal" id="exchangeModal">
+        <div class="exchange-header">
+            <div class="exchange-title">Обмен кристаллов</div>
+            <div class="close-exchange" id="closeExchange">✕</div>
+        </div>
+        <div class="exchange-rate">1 ✦ = 100 Đ</div>
+        <input type="number" class="exchange-input" id="exchangeInput" placeholder="Количество кристаллов" min="1">
+        <div class="exchange-action">
+            <button class="exchange-submit" id="exchangeSubmit">Обменять</button>
+            <button class="exchange-cancel" id="exchangeCancel">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const circle = document.getElementById('circle');
+            const coinsElement = document.getElementById('coins');
+            const crystalsElement = document.getElementById('crystals');
+            const banScreen = document.getElementById('banScreen');
+            const banTimer = document.getElementById('banTimer');
+            const warning = document.getElementById('warning');
+            const themeToggle = document.getElementById('themeToggle');
+            const shopBtn = document.getElementById('shopBtn');
+            const shop = document.getElementById('shop');
+            const closeShop = document.getElementById('closeShop');
+            const exchangeBtn = document.getElementById('exchangeBtn');
+            const exchangeModal = document.getElementById('exchangeModal');
+            const closeExchange = document.getElementById('closeExchange');
+            const exchangeInput = document.getElementById('exchangeInput');
+            const exchangeSubmit = document.getElementById('exchangeSubmit');
+            const exchangeCancel = document.getElementById('exchangeCancel');
+            const shopTabs = document.querySelectorAll('.shop-tab');
+            const skinsTab = document.getElementById('skinsTab');
+            const boostsTab = document.getElementById('boostsTab');
+            const boostsContainer = document.getElementById('boostsContainer');
+            
+            // Скины
+            const defaultSkinBtn = document.getElementById('defaultSkinBtn');
+            const premiumSkinBtn = document.getElementById('premiumSkinBtn');
+            const legendarySkinBtn = document.getElementById('legendarySkinBtn');
+            
+            // Бусты
+            const multiplierBoostBtn = document.getElementById('multiplierBoostBtn');
+            const luckBoostBtn = document.getElementById('luckBoostBtn');
+            const autoclickerBoostBtn = document.getElementById('autoclickerBoostBtn');
+            
+            // Загружаем сохраненные данные
+            let coins = parseInt(localStorage.getItem('doolcoins')) || 0;
+            let crystals = parseInt(localStorage.getItem('crystals')) || 0;
+            let currentTheme = localStorage.getItem('theme') || 'dark';
+            let currentSkin = localStorage.getItem('skin') || 'default';
+            let ownedSkins = JSON.parse(localStorage.getItem('ownedSkins')) || ['default'];
+            
+            // Активные бусты (не сохраняем при перезагрузке)
+            let activeBoosts = [];
+            let coinMultiplier = 1;
+            let crystalChance = 0.05; // 5% базовый шанс
+            let isAutoclickerActive = false;
+            let autoclickerInterval = null;
+            
+            // Применяем сохранённые настройки
+            document.body.className = currentTheme + '-theme';
+            themeToggle.classList.toggle('active', currentTheme === 'light');
+            applySkin(currentSkin);
+            updateSkinButtons();
+            updateBoostButtons();
+            updateActiveBoosts();
+            
+            coinsElement.textContent = coins.toLocaleString();
+            crystalsElement.textContent = crystals.toLocaleString();
+            
+            themeToggle.addEventListener('click', function() {
+                const isActive = this.classList.contains('active');
+                const newTheme = isActive ? 'dark' : 'light';
+                document.body.className = newTheme + '-theme';
+                this.classList.toggle('active');
+                localStorage.setItem('theme', newTheme);
+            });
+            
+            shopTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    
+                    shopTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    skinsTab.style.display = 'none';
+                    boostsTab.style.display = 'none';
+                    
+                    if (tabName === 'skins') {
+                        skinsTab.style.display = 'block';
+                    } else if (tabName === 'boosts') {
+                        boostsTab.style.display = 'block';
+                        updateBoostButtons();
+                    }
+                });
+            });
+            
+            shopBtn.addEventListener('click', function() {
+                shop.style.display = 'block';
+                updateBoostButtons();
+            });
+            
+            closeShop.addEventListener('click', function() {
+                shop.style.display = 'none';
+            });
+            
+            exchangeBtn.addEventListener('click', function() {
+                exchangeModal.style.display = 'block';
+            });
+            
+            closeExchange.addEventListener('click', function() {
+                exchangeModal.style.display = 'none';
+            });
+            
+            exchangeCancel.addEventListener('click', function() {
+                exchangeModal.style.display = 'none';
+            });
+            
+            exchangeInput.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                exchangeSubmit.disabled = isNaN(value) || value <= 0 || value > crystals;
+            });
+
+            exchangeSubmit.addEventListener('click', function() {
+                const amountToExchange = parseInt(exchangeInput.value);
+                if (amountToExchange > 0 && amountToExchange <= crystals) {
+                    crystals -= amountToExchange;
+                    coins += amountToExchange * 100;
+                    saveGameData();
+                    updateUI();
+                    exchangeModal.style.display = 'none';
+                    exchangeInput.value = '';
+                    exchangeSubmit.disabled = true;
+                }
+            });
+            
+            function saveGameData() {
+                localStorage.setItem('doolcoins', coins);
+                localStorage.setItem('crystals', crystals);
+                localStorage.setItem('skin', currentSkin);
+                localStorage.setItem('ownedSkins', JSON.stringify(ownedSkins));
+            }
+
+            function updateUI() {
+                coinsElement.textContent = coins.toLocaleString();
+                crystalsElement.textContent = crystals.toLocaleString();
+                updateSkinButtons();
+                updateBoostButtons();
+            }
+
+            function applySkin(skinName) {
+                circle.classList.remove('default-skin', 'premium-skin', 'legendary-skin');
+                circle.classList.add(skinName + '-skin');
+                currentSkin = skinName;
+                localStorage.setItem('skin', currentSkin);
+            }
+
+            function updateSkinButtons() {
+                [defaultSkinBtn, premiumSkinBtn, legendarySkinBtn].forEach(btn => {
+                    const skinId = btn.id.replace('Btn', '').replace('Skin', '');
+                    if (ownedSkins.includes(skinId)) {
+                        if (currentSkin === skinId) {
+                            btn.textContent = 'Выбрано';
+                            btn.disabled = true;
+                        } else {
+                            btn.textContent = 'Выбрать';
+                            btn.disabled = false;
+                            btn.onclick = () => applySkin(skinId);
+                        }
+                    } else {
+                        const priceElement = btn.previousElementSibling;
+                        let price = 0;
+                        if (skinId === 'premium') price = 100;
+                        if (skinId === 'legendary') price = 500;
+
+                        btn.textContent = 'Купить';
+                        btn.disabled = crystals < price;
+                        btn.onclick = () => buySkin(skinId, price, btn);
+                    }
+                });
+            }
+
+            function buySkin(skinId, price, button) {
+                if (crystals >= price) {
+                    crystals -= price;
+                    ownedSkins.push(skinId);
+                    saveGameData();
+                    updateUI();
+                    applySkin(skinId);
+                    
+                    const rect = button.getBoundingClientRect();
+                    createCoinEffect(rect.left + rect.width / 2, rect.top, `-${price}✦`);
+                } else {
+                    alert('Недостаточно кристаллов!');
+                }
+            }
+            
+            function updateBoostButtons() {
+                multiplierBoostBtn.disabled = activeBoosts.some(b => b.type === 'multiplier') || coins < 500;
+                multiplierBoostBtn.textContent = activeBoosts.some(b => b.type === 'multiplier') ? 'Активно' : 'Купить';
+
+                luckBoostBtn.disabled = activeBoosts.some(b => b.type === 'luck') || coins < 300;
+                luckBoostBtn.textContent = activeBoosts.some(b => b.type === 'luck') ? 'Активно' : 'Купить';
+
+                autoclickerBoostBtn.disabled = activeBoosts.some(b => b.type === 'autoclicker') || coins < 400;
+                autoclickerBoostBtn.textContent = activeBoosts.some(b => b.type === 'autoclicker') ? 'Активно' : 'Купить';
+            }
+
+            function activateBoost(type, duration, value, cost, buttonElement) {
+                if (coins < cost) {
+                    alert('Недостаточно монет!');
+                    return;
+                }
+
+                coins -= cost;
+                saveGameData();
+                updateUI();
+                const rect = buttonElement.getBoundingClientRect();
+                createCoinEffect(rect.left + rect.width / 2, rect.top, `-${cost}Đ`);
+                
+                const boost = { type, duration, value, endTime: Date.now() + duration * 1000 };
+                activeBoosts.push(boost);
+                
+                if (type === 'multiplier') {
+                    coinMultiplier *= value;
+                } else if (type === 'luck') {
+                    crystalChance += value;
+                } else if (type === 'autoclicker') {
+                    isAutoclickerActive = true;
+                    autoclickerInterval = setInterval(simulateClick, 1000);
+                }
+                
+                updateActiveBoosts();
+                updateBoostButtons();
+
+                const boostTimer = setTimeout(() => {
+                    deactivateBoost(boost);
+                }, duration * 1000);
+
+                boost.timerId = boostTimer;
+            }
+
+            function deactivateBoost(boost) {
+                activeBoosts = activeBoosts.filter(b => b !== boost);
+
+                if (boost.type === 'multiplier') {
+                    coinMultiplier /= boost.value;
+                } else if (boost.type === 'luck') {
+                    crystalChance -= boost.value;
+                } else if (boost.type === 'autoclicker') {
+                    isAutoclickerActive = false;
+                    clearInterval(autoclickerInterval);
+                    autoclickerInterval = null;
+                }
+                updateActiveBoosts();
+                updateBoostButtons();
+            }
+
+            function updateActiveBoosts() {
+                boostsContainer.innerHTML = '';
+                activeBoosts.forEach(boost => {
+                    const boostDiv = document.createElement('div');
+                    boostDiv.classList.add('boost-indicator');
+                    
+                    let icon = '';
+                    let label = '';
+
+                    if (boost.type === 'multiplier') {
+                        icon = '⚡';
+                        label = `x${boost.value}`;
+                    } else if (boost.type === 'luck') {
+                        icon = '🍀';
+                        label = `+${Math.round(boost.value * 100)}%`;
+                    } else if (boost.type === 'autoclicker') {
+                        icon = '🤖';
+                        label = 'Автокликер';
+                    }
+
+                    const updateTimer = () => {
+                        const timeLeft = Math.max(0, Math.floor((boost.endTime - Date.now()) / 1000));
+                        if (timeLeft > 0) {
+                            boostDiv.innerHTML = `<span class="boost-icon">${icon}</span> ${label} (${timeLeft}с)`;
+                            requestAnimationFrame(updateTimer);
+                        } else {
+                            boostDiv.remove();
+                        }
+                    };
+                    updateTimer();
+                    boostsContainer.appendChild(boostDiv);
+                });
+            }
+
+            multiplierBoostBtn.addEventListener('click', (e) => activateBoost('multiplier', 60, 2, 500, e.target));
+            luckBoostBtn.addEventListener('click', (e) => activateBoost('luck', 30, 0.3, 300, e.target));
+            autoclickerBoostBtn.addEventListener('click', (e) => activateBoost('autoclicker', 30, null, 400, e.target));
+            
+            let clickCount = 0;
+            let lastClickTime = 0;
+            let banTimeout = null;
+            let banInterval = null;
+
+            function handleCircleClick(event) {
+                if (banScreen.style.display === 'block') {
+                    return;
+                }
+
+                coins += 1 * coinMultiplier;
+                coinsElement.textContent = coins.toLocaleString();
+                saveGameData();
+
+                // ИЗМЕНЕНО: Создание эффекта монетки в месте клика
+                createCoinEffect(event.clientX, event.clientY, `+${1 * coinMultiplier}Đ`);
+
+                if (Math.random() < crystalChance) {
+                    crystals += 1;
+                    crystalsElement.textContent = crystals.toLocaleString();
+                    createCrystalEffect(event.clientX, event.clientY);
+                    saveGameData();
+                }
+
+                createCircleEffects(event);
+
+                const currentTime = Date.now();
+                if (currentTime - lastClickTime < 50) {
+                    clickCount++;
+                    if (clickCount >= 10) {
+                        showBanScreen();
+                    } else if (clickCount >= 5) {
+                        showWarning();
+                    }
+                } else {
+                    clickCount = 0;
+                    hideWarning();
+                }
+                lastClickTime = currentTime;
+
+                circle.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    circle.style.transform = 'scale(1)';
+                }, 100);
+            }
+
+            circle.addEventListener('click', handleCircleClick);
+
+            function simulateClick() {
+                const rect = circle.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                handleCircleClick({ clientX: x, clientY: y, target: circle });
+            }
+
+            function createCircleEffects(event) {
+                const effect = document.createElement('div');
+                const circleRect = circle.getBoundingClientRect();
+                const x = event.clientX - circleRect.left;
+                const y = event.clientY - circleRect.top;
+
+                if (currentSkin === 'default') {
+                    effect.classList.add('tap-effect');
+                } else if (currentSkin === 'premium') {
+                    effect.classList.add('premium-tap-effect');
+                    const star = document.createElement('div');
+                    star.classList.add('premium-star-effect');
+                    star.style.left = `${x - 25}px`;
+                    star.style.top = `${y - 25}px`;
+                    circle.appendChild(star);
+                    star.addEventListener('animationend', () => star.remove());
+                } else if (currentSkin === 'legendary') {
+                    effect.classList.add('legendary-tap-effect');
+                    for (let i = 0; i < 5; i++) {
+                        const spark = document.createElement('div');
+                        spark.classList.add('legendary-spark-effect');
+                        const randomX = Math.random();
+                        const randomY = Math.random();
+                        spark.style.setProperty('--spark-x', randomX);
+                        spark.style.setProperty('--spark-y', randomY);
+                        spark.style.left = `${x - 5}px`;
+                        spark.style.top = `${y - 5}px`;
+                        circle.appendChild(spark);
+                        spark.addEventListener('animationend', () => spark.remove());
+                    }
+                }
+                
+                circle.appendChild(effect);
+                effect.addEventListener('animationend', () => effect.remove());
+            }
+            
+            // ИЗМЕНЕНО: Функция принимает координаты x, y
+            function createCoinEffect(x, y, text) {
+                const coinEffect = document.createElement('div');
+                coinEffect.classList.add('coin-effect');
+                coinEffect.textContent = text;
+                
+                coinEffect.style.left = `${x}px`;
+                coinEffect.style.top = `${y}px`;
+                
+                document.body.appendChild(coinEffect);
+                coinEffect.addEventListener('animationend', () => {
+                    coinEffect.remove();
+                });
+            }
+
+            function createCrystalEffect(x, y) {
+                const crystalEffect = document.createElement('div');
+                crystalEffect.classList.add('crystal-effect');
+                crystalEffect.textContent = '✦';
+                
+                crystalEffect.style.left = `${x}px`;
+                crystalEffect.style.top = `${y}px`;
+                
+                document.body.appendChild(crystalEffect);
+                crystalEffect.addEventListener('animationend', () => {
+                    crystalEffect.remove();
+                });
+            }
+
+            function showWarning() {
+                warning.style.display = 'block';
+                clearTimeout(warning.timeout);
+                warning.timeout = setTimeout(() => {
+                    warning.style.display = 'none';
+                }, 2000);
+            }
+
+            function hideWarning() {
+                warning.style.display = 'none';
+                clearTimeout(warning.timeout);
+            }
+
+            function showBanScreen() {
+                banScreen.style.display = 'flex';
+                coins = Math.floor(coins / 2);
+                saveGameData();
+                updateUI();
+                
+                let timeLeft = 60;
+                banTimer.textContent = timeLeft;
+                
+                if (autoclickerInterval) {
+                    clearInterval(autoclickerInterval);
+                    autoclickerInterval = null;
+                }
+                circle.removeEventListener('click', handleCircleClick);
+
+                clearInterval(banInterval);
+                banInterval = setInterval(() => {
+                    timeLeft--;
+                    banTimer.textContent = timeLeft;
+                    if (timeLeft <= 0) {
+                        clearInterval(banInterval);
+                        banScreen.style.display = 'none';
+                        circle.addEventListener('click', handleCircleClick);
+                        clickCount = 0;
+                    }
+                }, 1000);
+            }
+            updateUI();
+        });
+    </script>
+</body>
+</html>
